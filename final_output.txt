@@ -1,0 +1,12 @@
+Loading template...
+Replacing content...
+  ✓ Replaced: "AI Hackathon Idea Title..."
+  ✓ Replaced: "Solution Overview:..."
+  ✓ Replaced: "Summary of solution – High-lev..."
+  ✓ Replaced: "Show your demo!..."
+  ✓ Replaced: "Problem Statement:..."
+  ✓ Replaced: "What problem are you solving? ..."
+  ✓ Replaced: "Business &amp; Customer Impact..."
+  ✓ Replaced: "Highlight potential benefits o..."
+  ✓ Replaced: "This is the template 1 pager t..."
+\nGenerating presentation...

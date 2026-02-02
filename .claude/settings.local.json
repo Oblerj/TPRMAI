@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(dir:*)",
+      "Bash(where npm:*)",
+      "Bash(npm --version:*)",
+      "Bash(winget install:*)",
+      "Bash(powershell:*)",
+      "Bash(msiexec:*)",
+      "Bash(\"C:\\\\Program Files\\\\nodejs\\\\node.exe\" --version)",
+      "Bash(\"C:\\\\Users\\\\JOBLER\\\\OneDrive - Sleep Number Corporation\\\\Documents\\\\AI TPRM MACHINE\\\\node-v22.12.0-win-x64\\\\node.exe\" --version)",
+      "Bash(cmd /c \"C:\\\\Users\\\\JOBLER\\\\OneDrive - Sleep Number Corporation\\\\Documents\\\\AI TPRM MACHINE\\\\node-v22.12.0-win-x64\\\\node.exe\" --version)",
+      "Bash(\".\\\\node-v22.12.0-win-x64\\\\npm.cmd\" install)",
+      "Bash(\"C:\\\\Users\\\\JOBLER\\\\OneDrive - Sleep Number Corporation\\\\Documents\\\\AI TPRM MACHINE\\\\node-v22.12.0-win-x64\\\\npm.cmd\" install --prefix \"C:\\\\Users\\\\JOBLER\\\\OneDrive - Sleep Number Corporation\\\\Documents\\\\AI TPRM MACHINE\")",
+      "Bash(\"C:\\\\Users\\\\JOBLER\\\\OneDrive - Sleep Number Corporation\\\\Documents\\\\AI TPRM MACHINE\\\\run-npm.bat\")",
+      "Bash(cmd /c \"C:\\\\Users\\\\JOBLER\\\\OneDrive - Sleep Number Corporation\\\\Documents\\\\AI TPRM MACHINE\\\\run-npm.bat\")",
+      "Bash(cmd /c \"C:\\\\Users\\\\JOBLER\\\\OneDrive - Sleep Number Corporation\\\\Documents\\\\AI TPRM MACHINE\\\\start-app.bat\")",
+      "WebSearch",
+      "WebFetch(domain:apitracker.io)",
+      "WebFetch(domain:docs.blinkops.com)",
+      "Bash(git clone:*)",
+      "Bash(claude /plugin marketplace add:*)",
+      "Bash(sudo chmod -R u+w \"/Users/jason.obler@sleepnumber.com/Documents/AITPRMMACHINE\")"
+    ]
+  }
+}

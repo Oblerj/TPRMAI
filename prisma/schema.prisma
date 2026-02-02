@@ -1,0 +1,488 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER & AUTHENTICATION
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String?
+  role          UserRole  @default(ANALYST)
+  department    String?
+  isActive      Boolean   @default(true)
+  lastLogin     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  auditTrails   AuditTrail[]
+  sessions      Session[]
+  accounts      Account[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+enum UserRole {
+  ADMIN
+  ANALYST
+  VIEWER
+  VENDOR
+}
+
+// ============================================
+// VENDOR MANAGEMENT
+// ============================================
+
+model Vendor {
+  id                  String    @id @default(cuid())
+  name                String
+  legalName           String?
+  dunsNumber          String?
+  website             String?
+  industry            String?
+  country             String?
+  stateProvince       String?
+  primaryContactName  String?
+  primaryContactEmail String?
+  primaryContactPhone String?
+  businessOwner       String?
+  itOwner             String?
+  contractStartDate   DateTime?
+  contractEndDate     DateTime?
+  annualSpend         Decimal?  @db.Decimal(15, 2)
+  status              VendorStatus @default(ACTIVE)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Relations
+  riskProfiles        RiskProfile[]
+  riskAssessments     RiskAssessment[]
+  documents           Document[]
+  riskFindings        RiskFinding[]
+  reports             Report[]
+  remediationActions  RemediationAction[]
+
+  @@map("vendors")
+}
+
+enum VendorStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+  TERMINATED
+}
+
+// ============================================
+// RISK PROFILES
+// ============================================
+
+model RiskProfile {
+  id                    String    @id @default(cuid())
+  vendorId              String
+  riskTier              RiskTier
+  overallRiskScore      Int?      // 1-100
+  dataSensitivityLevel  String?
+  dataTypesAccessed     String[]
+  systemIntegrations    String[]
+  hasPiiAccess          Boolean   @default(false)
+  hasPhiAccess          Boolean   @default(false)
+  hasPciAccess          Boolean   @default(false)
+  businessCriticality   BusinessCriticality?
+  assessmentFrequency   String?
+  lastAssessmentDate    DateTime?
+  nextAssessmentDate    DateTime?
+  calculatedBy          String?   // Agent name (VERA)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Relations
+  vendor                Vendor    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  riskAssessments       RiskAssessment[]
+
+  @@map("risk_profiles")
+}
+
+enum RiskTier {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum BusinessCriticality {
+  MISSION_CRITICAL
+  BUSINESS_CRITICAL
+  IMPORTANT
+  STANDARD
+}
+
+// ============================================
+// RISK ASSESSMENTS
+// ============================================
+
+model RiskAssessment {
+  id                     String    @id @default(cuid())
+  vendorId               String
+  riskProfileId          String?
+  assessmentType         AssessmentType
+  assessmentStatus       AssessmentStatus @default(DRAFT)
+  assessedBy             String?   // Agent name (CARA)
+  assessmentDate         DateTime?
+
+  // Risk Category Scores (1-5)
+  securityRiskScore      Int?
+  operationalRiskScore   Int?
+  complianceRiskScore    Int?
+  financialRiskScore     Int?
+  reputationalRiskScore  Int?
+  strategicRiskScore     Int?
+
+  overallAssessmentScore Int?
+  riskRating             RiskTier?
+  summary                String?   @db.Text
+  recommendations        String?   @db.Text
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  // Relations
+  vendor                 Vendor       @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  riskProfile            RiskProfile? @relation(fields: [riskProfileId], references: [id])
+  riskFindings           RiskFinding[]
+  reports                Report[]
+
+  @@map("risk_assessments")
+}
+
+enum AssessmentType {
+  INITIAL
+  ANNUAL
+  TRIGGERED
+  RENEWAL
+}
+
+enum AssessmentStatus {
+  DRAFT
+  IN_PROGRESS
+  PENDING_REVIEW
+  COMPLETE
+  APPROVED
+}
+
+// ============================================
+// DOCUMENTS
+// ============================================
+
+model Document {
+  id             String    @id @default(cuid())
+  vendorId       String
+  documentType   DocumentType
+  documentName   String
+  filePath       String?
+  fileSize       Int?
+  mimeType       String?
+  uploadDate     DateTime  @default(now())
+  documentDate   DateTime?
+  expirationDate DateTime?
+  status         DocumentStatus @default(PENDING)
+  retrievedBy    String?   // Agent name (DORA)
+  source         String?   // Vendor Upload, API, Manual
+  version        String?
+  isCurrent      Boolean   @default(true)
+  analysisResult String?   @db.Text
+  createdAt      DateTime  @default(now())
+
+  // Relations
+  vendor         Vendor    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  riskFindings   RiskFinding[]
+
+  @@map("documents")
+}
+
+enum DocumentType {
+  SOC2_TYPE1
+  SOC2_TYPE2
+  ISO27001
+  PENTEST
+  VULNERABILITY_SCAN
+  SIG_QUESTIONNAIRE
+  CAIQ
+  CUSTOM_QUESTIONNAIRE
+  INSURANCE_CERTIFICATE
+  BUSINESS_CONTINUITY
+  PRIVACY_POLICY
+  OTHER
+}
+
+enum DocumentStatus {
+  PENDING
+  RECEIVED
+  ANALYZING
+  ANALYZED
+  EXPIRED
+  REJECTED
+}
+
+// ============================================
+// RISK FINDINGS
+// ============================================
+
+model RiskFinding {
+  id                String    @id @default(cuid())
+  vendorId          String
+  assessmentId      String?
+  documentId        String?
+  findingType       String?
+  findingCategory   String?
+  severity          FindingSeverity
+  title             String
+  description       String?   @db.Text
+  snbrRiskMapping   String?
+  affectedControls  String[]
+  sourceReference   String?   @db.Text
+  identifiedBy      String?   // Agent name (SARA)
+  identifiedDate    DateTime  @default(now())
+  status            FindingStatus @default(OPEN)
+  dueDate           DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  vendor            Vendor          @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  assessment        RiskAssessment? @relation(fields: [assessmentId], references: [id])
+  document          Document?       @relation(fields: [documentId], references: [id])
+  remediationActions RemediationAction[]
+
+  @@map("risk_findings")
+}
+
+enum FindingSeverity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFORMATIONAL
+}
+
+enum FindingStatus {
+  OPEN
+  IN_REMEDIATION
+  PENDING_VERIFICATION
+  RESOLVED
+  ACCEPTED
+  CLOSED
+}
+
+// ============================================
+// REPORTS
+// ============================================
+
+model Report {
+  id             String    @id @default(cuid())
+  vendorId       String?
+  assessmentId   String?
+  reportType     ReportType
+  reportName     String
+  generatedBy    String?   // Agent name (RITA)
+  generatedDate  DateTime  @default(now())
+  filePath       String?
+  content        String?   @db.Text
+  status         ReportStatus @default(DRAFT)
+  approvedBy     String?
+  approvedDate   DateTime?
+  createdAt      DateTime  @default(now())
+
+  // Relations
+  vendor         Vendor?        @relation(fields: [vendorId], references: [id])
+  assessment     RiskAssessment? @relation(fields: [assessmentId], references: [id])
+
+  @@map("reports")
+}
+
+enum ReportType {
+  EXECUTIVE_SUMMARY
+  DETAILED_ASSESSMENT
+  COMPLIANCE_STATUS
+  TREND_ANALYSIS
+  VENDOR_SCORECARD
+  PORTFOLIO_OVERVIEW
+}
+
+enum ReportStatus {
+  DRAFT
+  GENERATED
+  PENDING_APPROVAL
+  APPROVED
+  PUBLISHED
+}
+
+// ============================================
+// REMEDIATION ACTIONS
+// ============================================
+
+model RemediationAction {
+  id                String    @id @default(cuid())
+  findingId         String
+  vendorId          String
+  actionType        ActionType
+  title             String
+  description       String?   @db.Text
+  assignedTo        String?
+  ownerType         OwnerType?
+  priority          Priority  @default(MEDIUM)
+  status            ActionStatus @default(OPEN)
+  dueDate           DateTime?
+  completionDate    DateTime?
+  managedBy         String?   // Agent name (MARS)
+  verificationNotes String?   @db.Text
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  finding           RiskFinding @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  vendor            Vendor      @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@map("remediation_actions")
+}
+
+enum ActionType {
+  REMEDIATE
+  MITIGATE
+  ACCEPT
+  TRANSFER
+}
+
+enum OwnerType {
+  VENDOR
+  INTERNAL
+}
+
+enum Priority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum ActionStatus {
+  OPEN
+  IN_PROGRESS
+  PENDING_VERIFICATION
+  VERIFIED
+  CLOSED
+  OVERDUE
+}
+
+// ============================================
+// AGENT ACTIVITY LOG
+// ============================================
+
+model AgentActivityLog {
+  id               String    @id @default(cuid())
+  agentName        String    // VERA, CARA, DORA, SARA, RITA, MARS
+  activityType     String
+  entityType       String?
+  entityId         String?
+  actionTaken      String?   @db.Text
+  inputSummary     String?   @db.Text
+  outputSummary    String?   @db.Text
+  status           String?
+  errorMessage     String?   @db.Text
+  processingTimeMs Int?
+  createdAt        DateTime  @default(now())
+
+  @@index([agentName])
+  @@index([createdAt])
+  @@map("agent_activity_log")
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+model Notification {
+  id                 String    @id @default(cuid())
+  recipientType      String?
+  recipientId        String?
+  notificationType   String
+  title              String
+  message            String?   @db.Text
+  relatedEntityType  String?
+  relatedEntityId    String?
+  sentBy             String?   // Agent name or System
+  sentAt             DateTime?
+  readAt             DateTime?
+  status             NotificationStatus @default(PENDING)
+  createdAt          DateTime  @default(now())
+
+  @@map("notifications")
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  READ
+  FAILED
+}
+
+// ============================================
+// AUDIT TRAIL
+// ============================================
+
+model AuditTrail {
+  id          String    @id @default(cuid())
+  userId      String?
+  agentName   String?
+  action      String
+  entityType  String?
+  entityId    String?
+  oldValues   Json?
+  newValues   Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+
+  // Relations
+  user        User?     @relation(fields: [userId], references: [id])
+
+  @@index([entityType, entityId])
+  @@map("audit_trail")
+}

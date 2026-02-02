@@ -1,0 +1,1 @@
+Node.js is working! Version: v22.12.0

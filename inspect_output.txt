@@ -1,0 +1,11 @@
+=== Text content in slide 1 ===
+[0]: "AI Hackathon Idea Title"
+[1]: "Solution Overview:"
+[2]: "Summary of solution – High-level description and main features. Any implementation factors? Estimate potential costs associated. "
+[3]: "Show your demo!"
+[4]: "Problem Statement:"
+[5]: "What problem are you solving? Give background on current process/context/opportunity. "
+[6]: "Business &amp; Customer Impact/Benefit"
+[7]: "Highlight potential benefits of this solution at scale, Time Savings​, Cost Savings​, Business Growth​, Revenue Drivers"
+[8]: "This is the template 1 pager that will be used during the presentation. Reminder – Only 6 minutes per group. "
+\nFull XML saved to slide1_structure.xml
